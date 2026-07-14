@@ -1,0 +1,37 @@
+# Build
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# NuGet
+packages/
+*.nupkg
+
+# Configurações locais
+appsettings.Development.json
+appsettings.Local.json
+
+# Publicação
+publish/
+
+# Sistema
+Thumbs.db
+Desktop.ini
+
+# Segredos
+secrets.json
