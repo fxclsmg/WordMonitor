@@ -75,6 +75,32 @@ serviceProvider =>
 
 
 // ===============================
+// MonitorConfig
+// ===============================
+
+
+builder.Services.AddSingleton<MonitorConfig>(
+serviceProvider =>
+{
+    var configuration =
+        serviceProvider.GetRequiredService<IConfiguration>();
+
+
+    var config =
+        new MonitorConfig();
+
+
+    configuration
+        .GetSection("Monitor")
+        .Bind(config);
+
+
+    return config;
+});
+
+
+
+// ===============================
 // Notificações
 // ===============================
 

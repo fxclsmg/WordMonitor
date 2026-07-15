@@ -11,17 +11,22 @@ public class DocumentScanner
 
     private readonly ValidadeConfig _validadeConfig;
 
+    private readonly MonitorConfig _monitorConfig;
+
 
 
     public DocumentScanner(
         ParserService parser,
-        ValidadeConfig validadeConfig)
+        ValidadeConfig validadeConfig,
+        MonitorConfig monitorConfig)
     {
         _reader = new WordReader();
 
         _parser = parser;
 
         _validadeConfig = validadeConfig;
+
+        _monitorConfig = monitorConfig;
     }
 
 
@@ -42,11 +47,7 @@ public class DocumentScanner
                     "*.docx",
                     SearchOption.AllDirectories
                 )
-                .Where(a =>
-                    !Path
-                    .GetFileName(a)
-                    .StartsWith("~$")
-                );
+                .Where(ArquivoPermitido);
 
 
 
@@ -69,6 +70,47 @@ public class DocumentScanner
 
 
         return documentos;
+    }
+
+
+
+
+
+    // Verifica se o arquivo deve ser processado
+    private bool ArquivoPermitido(
+        string arquivo)
+    {
+        var nomeArquivo =
+            Path.GetFileName(
+                arquivo
+            );
+
+
+        // Ignora arquivos temporários do Word
+        if(nomeArquivo.StartsWith("~$"))
+        {
+            return false;
+        }
+
+
+
+        // Se não houver prefixos configurados,
+        // considera todos permitidos
+        if(_monitorConfig.PrefixosPermitidos.Count == 0)
+        {
+            return true;
+        }
+
+
+
+        return _monitorConfig
+            .PrefixosPermitidos
+            .Any(prefixo =>
+                nomeArquivo.StartsWith(
+                    prefixo,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            );
     }
 
 
