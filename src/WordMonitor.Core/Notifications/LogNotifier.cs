@@ -4,6 +4,7 @@ namespace WordMonitor.Notifications;
 
 public class LogNotifier : INotifier
 {
+
     public Task NotificarAsync(
         Notificacao notificacao)
     {

@@ -17,8 +17,7 @@ public class DocumentMonitorService : IDisposable
 
     private readonly FileSystemWatcher _watcher;
 
-    private readonly Dictionary<string, DocumentoInfo> _documentos =
-        new();
+    private readonly Dictionary<string, DocumentoInfo> _documentos = new();
 
     private readonly SemaphoreSlim _lock = new(1, 1);
 
@@ -49,12 +48,15 @@ public class DocumentMonitorService : IDisposable
             );
 
 
-        _watcher.IncludeSubdirectories = false;
+        _watcher.IncludeSubdirectories = true;
+
+        _watcher.InternalBufferSize = 64 * 1024;
 
 
         _watcher.NotifyFilter =
             NotifyFilters.LastWrite |
             NotifyFilters.FileName |
+            NotifyFilters.DirectoryName |
             NotifyFilters.Size;
 
 
@@ -62,6 +64,7 @@ public class DocumentMonitorService : IDisposable
         _watcher.Created += OnArquivoAlterado;
         _watcher.Renamed += OnArquivoAlterado;
         _watcher.Deleted += OnArquivoRemovido;
+        _watcher.Error += OnWatcherError;
     }
 
 
@@ -69,7 +72,7 @@ public class DocumentMonitorService : IDisposable
     public async Task IniciarAsync()
     {
         Console.WriteLine(
-            "Carregando documentos..."
+            $"{DateTime.Now.ToString()}; Carregando documentos..."
         );
 
 
@@ -85,16 +88,13 @@ public class DocumentMonitorService : IDisposable
 
 
         Console.WriteLine(
-            $"{_documentos.Count} documentos carregados."
+            $"{DateTime.Now.ToString()}; {_documentos.Count} documentos carregados."
         );
 
 
         _watcher.EnableRaisingEvents = true;
 
 
-        Console.WriteLine(
-            "Monitor iniciado."
-        );
     }
 
 
@@ -120,7 +120,7 @@ public class DocumentMonitorService : IDisposable
             Console.WriteLine();
 
             Console.WriteLine(
-                $"Alteração detectada: {e.Name}"
+                $"{DateTime.Now.ToString()}; Alteração detectada: {e.Name}"
             );
 
 
@@ -160,13 +160,13 @@ public class DocumentMonitorService : IDisposable
 
 
             // Verifica renovação
-            if(documentoNovo.DataValidade >
-               documentoAntigo.DataValidade)
+            if(documentoNovo.DataFimValidade >
+               documentoAntigo.DataFimValidade)
             {
                 var notificacao =
                     _builder.CriarRenovacao(
                         documentoNovo,
-                        documentoAntigo.DataValidade!.Value
+                        documentoAntigo.DataFimValidade!.Value
                     );
 
 
@@ -178,11 +178,11 @@ public class DocumentMonitorService : IDisposable
 
 
             // Verifica vencimento
-            if(documentoNovo.DataValidade.HasValue)
+            if(documentoNovo.DataFimValidade.HasValue)
             {
                 var status =
                     _checker.Verificar(
-                        documentoNovo.DataValidade.Value
+                        documentoNovo.DataFimValidade.Value
                     );
 
 
@@ -211,7 +211,7 @@ public class DocumentMonitorService : IDisposable
         catch(Exception ex)
         {
             Console.WriteLine(
-                ex.Message
+                $"{DateTime.Now.ToString()}; {ex.Message}"
             );
         }
         finally
@@ -237,12 +237,27 @@ public class DocumentMonitorService : IDisposable
 
 
         Console.WriteLine(
-            $"Documento removido: {e.Name}"
+            $"{DateTime.Now.ToString()}; Documento removido: {e.Name}"
         );
     }
 
 
+    private async void OnWatcherError(
+    object? sender,
+    ErrorEventArgs e)
+    {
+        Console.WriteLine(
+            $"{DateTime.Now.ToString()}; Buffer do FileSystemWatcher excedido."
+        );
 
+        _documentos.Clear();
+
+        var documentos =
+            await _scanner.EscanearAsync(_pasta);
+
+        foreach (var doc in documentos)
+            _documentos[doc.Caminho] = doc;
+    }
 
 
     public void Dispose()

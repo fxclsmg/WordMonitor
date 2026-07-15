@@ -28,7 +28,7 @@ public class NotificationBuilder
         if (status == StatusDocumento.ProximoVencimento)
         {
             var dias =
-                (documento.DataValidade!.Value.Date -
+                (documento.DataFimValidade!.Value.Date -
                  DateTime.Now.Date).Days;
 
 
@@ -54,7 +54,7 @@ public class NotificationBuilder
                     .Replace("{arquivo}", arquivo)
                     .Replace("{dias}", dias.ToString())
                     .Replace("{data}",
-                        documento.DataValidade.Value
+                        documento.DataFimValidade.Value
                         .ToString("dd/MM/yyyy"))
             };
         }
@@ -82,7 +82,7 @@ public class NotificationBuilder
                     corpo!
                     .Replace("{arquivo}", arquivo)
                     .Replace("{data}",
-                        documento.DataValidade!.Value
+                        documento.DataFimValidade!.Value
                         .ToString("dd/MM/yyyy"))
             };
         }
@@ -128,7 +128,7 @@ public class NotificationBuilder
                 )
                 .Replace(
                     "{dataNova}",
-                    documento.DataValidade!.Value
+                    documento.DataFimValidade!.Value
                     .ToString("dd/MM/yyyy")
                 )
         };
