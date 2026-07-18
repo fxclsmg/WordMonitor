@@ -1,4 +1,6 @@
 using WordMonitor.Models;
+using WordMonitor.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace WordMonitor.Services;
 
@@ -7,9 +9,9 @@ public class ValidityChecker
     private readonly int _diasAviso;
 
 
-    public ValidityChecker(int diasAviso)
+    public ValidityChecker(IOptions<ValidadeConfig> options)
     {
-        _diasAviso = diasAviso;
+        _diasAviso = options.Value.DiasAviso;
     }
 
 

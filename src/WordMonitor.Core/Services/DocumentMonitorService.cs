@@ -1,5 +1,6 @@
 using WordMonitor.Models;
 using WordMonitor.Notifications;
+using Microsoft.Extensions.Options;
 
 namespace WordMonitor.Services;
 
@@ -21,37 +22,26 @@ public class DocumentMonitorService : IDisposable
 
     private readonly SemaphoreSlim _lock = new(1, 1);
 
-
-
     public DocumentMonitorService(
-        string pasta,
+        IOptions<MonitorConfig> monitorConfig,
         INotifier notifier,
         DocumentScanner scanner,
         ValidityChecker checker,
         NotificationBuilder builder)
     {
-        _pasta = pasta;
+        var _config = monitorConfig.Value;
+
+        _pasta = _config.Pasta;
 
         _notifier = notifier;
-
         _scanner = scanner;
-
         _checker = checker;
-
         _builder = builder;
 
-
-        _watcher =
-            new FileSystemWatcher(
-                _pasta,
-                "*.docx"
-            );
-
+        _watcher = new FileSystemWatcher(_pasta, "*.docx");
 
         _watcher.IncludeSubdirectories = true;
-
         _watcher.InternalBufferSize = 64 * 1024;
-
 
         _watcher.NotifyFilter =
             NotifyFilters.LastWrite |
@@ -59,14 +49,12 @@ public class DocumentMonitorService : IDisposable
             NotifyFilters.DirectoryName |
             NotifyFilters.Size;
 
-
         _watcher.Changed += OnArquivoAlterado;
         _watcher.Created += OnArquivoAlterado;
         _watcher.Renamed += OnArquivoAlterado;
         _watcher.Deleted += OnArquivoRemovido;
         _watcher.Error += OnWatcherError;
     }
-
 
 
     public async Task IniciarAsync()
@@ -106,7 +94,7 @@ public class DocumentMonitorService : IDisposable
         FileSystemEventArgs e)
     {
         if (Path.GetFileName(e.FullPath)
-            .StartsWith("~$"))
+            .StartsWith("~"))
         {
             return;
         }
@@ -228,13 +216,18 @@ public class DocumentMonitorService : IDisposable
         object? sender,
         FileSystemEventArgs e)
     {
+        if (Path.GetFileName(e.FullPath)
+            .StartsWith("~"))
+        {
+            return;
+        }
+
         if(_documentos.ContainsKey(e.FullPath))
         {
             _documentos.Remove(
                 e.FullPath
             );
         }
-
 
         Console.WriteLine(
             $"{DateTime.Now.ToString()}; Documento removido: {e.Name}"

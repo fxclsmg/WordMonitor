@@ -1,4 +1,4 @@
-namespace WordMonitor.Models;
+namespace WordMonitor.Configuration;
 
 public class ValidadeConfig
 {

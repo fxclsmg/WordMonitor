@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using WordMonitor.Configuration;
 using WordMonitor.Models;
 using WordMonitor.Notifications;
 
@@ -5,7 +7,7 @@ namespace WordMonitor.Services;
 
 public class ExpirationService
 {
-    private readonly string _pasta;
+    private readonly MonitorConfig _config;
 
     private readonly DocumentScanner _scanner;
 
@@ -17,65 +19,86 @@ public class ExpirationService
 
 
     public ExpirationService(
-        string pasta,
+        IOptions<MonitorConfig> options,
         DocumentScanner scanner,
         ValidityChecker checker,
         NotificationBuilder builder,
         INotifier notifier)
     {
-        _pasta = pasta;
+        _config = options.Value;
         _scanner = scanner;
         _checker = checker;
         _builder = builder;
         _notifier = notifier;
     }
 
-
     public async Task VerificarAsync(
-        CancellationToken cancellationToken)
+        CancellationToken token)
     {
-        Console.WriteLine(
-            $"{DateTime.Now}; Verificando vencimentos..."
-        );
-
-
-        var documentos =
-            await _scanner.EscanearAsync(_pasta);
-
-
-
-        foreach(var documento in documentos)
+        try
         {
-            if(!documento.DataFimValidade.HasValue)
-                continue;
+            Console.WriteLine(
+                $"{DateTime.Now}; Iniciando verificação de validade..."
+            );
 
 
-            var status =
-                _checker.Verificar(
-                    documento.DataFimValidade!.Value
-                );
-
-            if(status == StatusDocumento.Valido)
-                continue;
-
-
-
-            var notificacao =
-                _builder.CriarVencimento(
-                    documento,
-                    status
+            var documentos =
+                await _scanner.EscanearAsync(
+                    _config.Pasta
                 );
 
 
-            await _notifier.NotificarAsync(
-                notificacao
+            foreach(var documento in documentos)
+            {
+                token.ThrowIfCancellationRequested();
+
+
+                if (!documento.DataFimValidade.HasValue)
+                {
+                    continue;
+                }
+
+
+                var status =
+                    _checker.Verificar(
+                        documento.DataFimValidade.Value
+                    );
+
+
+                if(status == StatusDocumento.Valido)
+                {
+                    continue;
+                }
+
+
+                var notificacao =
+                    _builder.CriarVencimento(
+                        documento,
+                        status
+                    );
+
+
+                await _notifier.NotificarAsync(
+                    notificacao
+                );
+            }
+
+
+            Console.WriteLine(
+                $"{DateTime.Now}; Verificação concluída."
             );
         }
-
-
-        Console.WriteLine(
-            $"{DateTime.Now}; {documentos.Count} documentos verificados."
-        );
+        catch(OperationCanceledException)
+        {
+            Console.WriteLine(
+                $"{DateTime.Now}; Verificação cancelada."
+            );
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine(
+                $"{DateTime.Now}; Erro: {ex.Message}"
+            );
+        }
     }
 }
-

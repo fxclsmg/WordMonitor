@@ -46,11 +46,36 @@ dotnet run --project .\src\WordMonitor.Worker
 -- refenrecia projeto core no worker
 dotnet add .\src\WordMonitor.Worker\WordMonitor.Worker.csproj reference .\src\WordMonitor.Core\WordMonitor.Core.csproj
 
--- lista referencias
+-- lista referencias do projeto worker
 dotnet list .\src\WordMonitor.Worker\WordMonitor.Worker.csproj reference
 
+-- pacote de servico do windows
+dotnet add .\src\WordMonitor.Worker package Microsoft.Extensions.Hosting.WindowsServices --version 8.0.1
+
+-- comando para publicar projeto auto contido da configuração:
+dotnet publish -c Release
+
+-- Criar o caminho da instalação: src\WordMonitor.Worker\bin\Release\net8.0\win-x64\publish para o windows
+C:\Program Files\WordMonitor
+
+-- iniciar cmd com administrador
+
+-- inslatação do serviço no windows
+sc create WordMonitor binPath= "C:\Program Files\WordMonitor\WordMonitor.Worker.exe"
+
+-- inicia o serviço
+sc start WordMonitor
+
+-- para o serviço
+sc stop WordMonitor
+
+-- deleta o serviço
+sc delete WordMonitor
+
+-- instalador gerado com inosetup
+-- estudar script e melhoria da instalação
+
 -- próximos passos:
--- conseguir gerar instalador
 -- fazer arquivo de configuração externo à aplcação
 -- fazer programa de configuraões 
 

@@ -1,5 +1,7 @@
 using WordMonitor.Models;
 using WordMonitor.Utils;
+using WordMonitor.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace WordMonitor.Services;
 
@@ -17,19 +19,17 @@ public class DocumentScanner
 
     public DocumentScanner(
         ParserService parser,
-        ValidadeConfig validadeConfig,
-        MonitorConfig monitorConfig)
+        IOptions<ValidadeConfig> validadeConfig,
+        IOptions<MonitorConfig> monitorConfig)
     {
         _reader = new WordReader();
 
         _parser = parser;
 
-        _validadeConfig = validadeConfig;
+        _validadeConfig = validadeConfig.Value;
 
-        _monitorConfig = monitorConfig;
+        _monitorConfig = monitorConfig.Value;
     }
-
-
 
 
     // Lê todos os documentos da pasta e subpastas
@@ -87,7 +87,7 @@ public class DocumentScanner
 
 
         // Ignora arquivos temporários do Word
-        if(nomeArquivo.StartsWith("~$"))
+        if(nomeArquivo.StartsWith("~"))
         {
             return false;
         }

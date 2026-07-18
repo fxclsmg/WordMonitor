@@ -1,4 +1,4 @@
-using WordMonitor.Models;
+using WordMonitor.Configuration;
 
 namespace WordMonitor.Models;
 

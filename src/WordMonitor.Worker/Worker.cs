@@ -1,4 +1,6 @@
 using WordMonitor.Services;
+using Microsoft.Extensions.Options;
+using WordMonitor.Configuration;
 
 namespace WordMonitor.Worker;
 
@@ -8,20 +10,17 @@ public class Worker : BackgroundService
 
     private readonly ExpirationService _expirationService;
 
-    private readonly IConfiguration _configuration;
-
-
+    private readonly VerificacaoConfig _config;
 
     public Worker(
         DocumentMonitorService monitor,
         ExpirationService expirationService,
-        IConfiguration configuration)
+        IOptions<VerificacaoConfig> options)
     {
         _monitor = monitor;
         _expirationService = expirationService;
-        _configuration = configuration;
+        _config = options.Value;
     }
-
 
 
     protected override async Task ExecuteAsync(
@@ -35,27 +34,38 @@ public class Worker : BackgroundService
         await _monitor.IniciarAsync();
 
 
-        await ExecutarVerificacaoDiariaAsync(
-            stoppingToken
-        );
+        try
+        {
+            await ExecutarVerificacaoAsync(
+                stoppingToken
+            );
+        }
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine(
+                $"{DateTime.Now}; WordMonitor finalizado."
+            );
+        }
     }
 
 
 
 
-    private async Task ExecutarVerificacaoDiariaAsync(
+    private async Task ExecutarVerificacaoAsync(
         CancellationToken token)
     {
-        var horario =
-            _configuration["Verificacao:Horario"];
+
+        var horario =_config.Horario;
 
 
-        if(!TimeSpan.TryParse(
+       if(!TimeSpan.TryParse(
             horario,
             out var hora))
         {
-            throw new Exception(
-                "Horário inválido."
+            hora = new TimeSpan(15, 0, 0);
+
+            Console.WriteLine(
+                $"{DateTime.Now}; Horário inválido. Usando 15:00."
             );
         }
 
@@ -93,7 +103,6 @@ public class Worker : BackgroundService
                 espera,
                 token
             );
-
 
 
             await _expirationService.VerificarAsync(

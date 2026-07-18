@@ -1,34 +1,35 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Options;
+using WordMonitor.Configuration;
 
 namespace WordMonitor.Services;
 
 public class ParserService
 {
-    private readonly List<string> _regexes;
+
+    private readonly IOptionsMonitor<ValidadeConfig> _options;
 
 
     public ParserService(
-        List<string> regexes)
+        IOptionsMonitor<ValidadeConfig> config)
     {
-        _regexes = regexes;
+        _options = config;
     }
-
-
 
     public DateTime? ExtrairDataValidade(string texto)
     {
 
-        foreach(var regex in _regexes)
+        var config = _options.CurrentValue;
+
+        foreach(var padrao in config.Padroes)
         {
 
 
-            var match =
-                Regex.Match(
-                    texto,
-                    regex,
-                    RegexOptions.IgnoreCase
-                );
+            var match = Regex.Match(
+                texto,
+                padrao.Regex,
+                RegexOptions.IgnoreCase);
 
 
             if(!match.Success)

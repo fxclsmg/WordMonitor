@@ -35,3 +35,6 @@ Desktop.ini
 
 # Segredos
 secrets.json
+
+# instalador
+installer/output

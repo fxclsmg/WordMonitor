@@ -1,20 +1,18 @@
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using WordMonitor.Configuration;
 using WordMonitor.Models;
 
 namespace WordMonitor.Services;
 
 public class NotificationBuilder
 {
-    private readonly IConfiguration _config;
-
+    private readonly MensagensConfig _config;
 
     public NotificationBuilder(
-        IConfiguration config)
+        IOptions<MensagensConfig> options)
     {
-        _config = config;
+        _config = options.Value;
     }
-
-
 
     public Notificacao CriarVencimento(
         DocumentoInfo documento,
@@ -23,7 +21,7 @@ public class NotificationBuilder
         var arquivo =
             Path.GetFileName(documento.Caminho);
 
-        Notificacao notificacaoVencido = new Notificacao();
+        Notificacao notificacao = new();
 
         if (status == StatusDocumento.ProximoVencimento)
         {
@@ -31,63 +29,41 @@ public class NotificationBuilder
                 (documento.DataFimValidade!.Value.Date -
                  DateTime.Now.Date).Days;
 
-
-            var assunto =
-                _config[
-                    "Mensagens:DocumentoPertoVencimento:Assunto"
-                ];
-
-
-            var corpo =
-                _config[
-                    "Mensagens:DocumentoPertoVencimento:Corpo"
-                ];
-
-            notificacaoVencido = new Notificacao
+            notificacao = new Notificacao
             {
                 Assunto =
-                    assunto!
-                    .Replace("{arquivo}", arquivo),
+                    _config.DocumentoPertoVencimento.Assunto
+                        .Replace("{arquivo}", arquivo),
 
                 Corpo =
-                    corpo!
-                    .Replace("{arquivo}", arquivo)
-                    .Replace("{dias}", dias.ToString())
-                    .Replace("{data}",
-                        documento.DataFimValidade.Value
-                        .ToString("dd/MM/yyyy"))
+                    _config.DocumentoPertoVencimento.Corpo
+                        .Replace("{arquivo}", arquivo)
+                        .Replace("{dias}", dias.ToString())
+                        .Replace(
+                            "{data}",
+                            documento.DataFimValidade.Value
+                                .ToString("dd/MM/yyyy"))
             };
         }
-
-        if (status == StatusDocumento.Vencido)
+        else if (status == StatusDocumento.Vencido)
         {
-            var assunto =
-                _config[
-                    "Mensagens:DocumentoVencido:Assunto"
-                ];
-
-
-            var corpo =
-                _config[
-                    "Mensagens:DocumentoVencido:Corpo"
-                ];
-
-            notificacaoVencido =  new Notificacao
+            notificacao = new Notificacao
             {
                 Assunto =
-                    assunto!
-                    .Replace("{arquivo}", arquivo),
+                    _config.DocumentoVencido.Assunto
+                        .Replace("{arquivo}", arquivo),
 
                 Corpo =
-                    corpo!
-                    .Replace("{arquivo}", arquivo)
-                    .Replace("{data}",
-                        documento.DataFimValidade!.Value
-                        .ToString("dd/MM/yyyy"))
+                    _config.DocumentoVencido.Corpo
+                        .Replace("{arquivo}", arquivo)
+                        .Replace(
+                            "{data}",
+                            documento.DataFimValidade!.Value
+                                .ToString("dd/MM/yyyy"))
             };
         }
-        
-        return notificacaoVencido;
+
+        return notificacao;
     }
 
     public Notificacao CriarRenovacao(
@@ -97,42 +73,22 @@ public class NotificationBuilder
         var arquivo =
             Path.GetFileName(documento.Caminho);
 
-
-
-        var assunto =
-            _config[
-                "Mensagens:DocumentoRenovado:Assunto"
-            ];
-
-
-        var corpo =
-            _config[
-                "Mensagens:DocumentoRenovado:Corpo"
-            ];
-
-
-
-        var notificacaoRenovacao = new Notificacao
+        return new Notificacao
         {
             Assunto =
-                assunto!
-                .Replace("{arquivo}", arquivo),
-
+                _config.DocumentoRenovado.Assunto
+                    .Replace("{arquivo}", arquivo),
 
             Corpo =
-                corpo!
-                .Replace("{arquivo}", arquivo)
-                .Replace(
-                    "{dataAntiga}",
-                    dataAntiga.ToString("dd/MM/yyyy")
-                )
-                .Replace(
-                    "{dataNova}",
-                    documento.DataFimValidade!.Value
-                    .ToString("dd/MM/yyyy")
-                )
+                _config.DocumentoRenovado.Corpo
+                    .Replace("{arquivo}", arquivo)
+                    .Replace(
+                        "{dataAntiga}",
+                        dataAntiga.ToString("dd/MM/yyyy"))
+                    .Replace(
+                        "{dataNova}",
+                        documento.DataFimValidade!.Value
+                            .ToString("dd/MM/yyyy"))
         };
-
-        return notificacaoRenovacao;
     }
 }

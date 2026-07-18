@@ -1,60 +1,46 @@
 using MailKit.Net.Smtp;
 using MimeKit;
-using Microsoft.Extensions.Configuration;
 using WordMonitor.Models;
+using WordMonitor.Configuration;
+using Microsoft.Extensions.Options;
+
 
 namespace WordMonitor.Notifications;
 
 public class EmailNotifier : INotifier
 {
-    private readonly IConfiguration _config;
+
+    private readonly IOptionsMonitor<EmailConfig> _options;
 
 
     public EmailNotifier(
-        IConfiguration config)
+        IOptionsMonitor<EmailConfig> config)
     {
-        _config = config;
+        _options = config;
     }
-
 
     public async Task NotificarAsync(
         Notificacao notificacao)
     {
-        var usuario =
-            _config["Email:Usuario"];
-
-
-        var senha =
-            _config["Email:Senha"];
-
-
-        var destino =
-            _config["Email:Destino"];
-
-
+        var config = _options.CurrentValue;
 
         var email = new MimeMessage();
-
 
         email.From.Add(
             new MailboxAddress(
                 "WordMonitor",
-                usuario!
+                config.Usuario!
             )
         );
-
 
         email.To.Add(
             new MailboxAddress(
                 "Administrador",
-                destino!
+                config.Destino!
             )
         );
 
-
-        email.Subject =
-            notificacao.Assunto;
-
+        email.Subject = notificacao.Assunto;
 
         email.Body =
             new TextPart("plain")
@@ -62,28 +48,20 @@ public class EmailNotifier : INotifier
                 Text = notificacao.Corpo
             };
 
-
-
         using var smtp = new SmtpClient();
 
-
         await smtp.ConnectAsync(
-            _config["Email:Servidor"],
-            int.Parse(
-                _config["Email:Porta"]!
-            ),
+            config.Servidor,
+            config.Porta,
             MailKit.Security.SecureSocketOptions.StartTls
         );
 
-
         await smtp.AuthenticateAsync(
-            usuario,
-            senha
+            config.Usuario,
+            config.Senha
         );
 
-
         await smtp.SendAsync(email);
-
 
         await smtp.DisconnectAsync(true);
     }

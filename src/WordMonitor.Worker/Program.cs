@@ -2,207 +2,68 @@ using WordMonitor.Notifications;
 using WordMonitor.Services;
 using WordMonitor.Worker;
 using WordMonitor.Models;
-
+using WordMonitor.Configuration;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-
-builder.Configuration.AddJsonFile(
-    "appsettings.Local.json",
-    optional: true,
-    reloadOnChange: true
-);
-
-
+builder.Configuration
+    .AddJsonFile("appsettings.json", false, true)
+    .AddJsonFile("appsettings.Local.json", true, true);
 
 // ===============================
-// Parser
+// Serviço windows
 // ===============================
 
-builder.Services.AddSingleton<ParserService>(
-serviceProvider =>
+builder.Services.AddWindowsService(options =>
 {
-    var configuration =
-        serviceProvider.GetRequiredService<IConfiguration>();
-
-
-    var regexes =
-        configuration
-            .GetSection("Validade:Padroes")
-            .GetChildren()
-            .Select(x => x["Regex"]!)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .ToList();
-
-
-    return new ParserService(
-        regexes
-    );
+    options.ServiceName = "WordMonitor";
 });
 
+// ===============================
+// Config
+// ===============================
 
+builder.Services.Configure<MonitorConfig>(
+    builder.Configuration.GetSection("Monitor"));
 
+builder.Services.Configure<ValidadeConfig>(
+    builder.Configuration.GetSection("Validade"));
+
+builder.Services.Configure<EmailConfig>(
+    builder.Configuration.GetSection("Email"));
+
+builder.Services.Configure<NotificarConfig>(
+    builder.Configuration.GetSection("Notificar"));
+
+builder.Services.Configure<MensagensConfig>(
+    builder.Configuration.GetSection("Mensagens"));
+
+builder.Services.Configure<VerificacaoConfig>(
+    builder.Configuration.GetSection("Verificacao"));
 
 // ===============================
-// Scanner
+// Injeção de dependências
 // ===============================
 
 builder.Services.AddSingleton<DocumentScanner>();
+builder.Services.AddSingleton<ParserService>();
+builder.Services.AddSingleton<ValidityChecker>();
+builder.Services.AddSingleton<DocumentMonitorService>();
+builder.Services.AddSingleton<ExpirationService>();
 
-
-
-// ===============================
-// ValdiadeConfig
-// ===============================
-builder.Services.AddSingleton<ValidadeConfig>(
-serviceProvider =>
-{
-    var configuration =
-        serviceProvider.GetRequiredService<IConfiguration>();
-
-    var config =
-        new ValidadeConfig();
-
-    configuration
-        .GetSection("Validade")
-        .Bind(config);
-
-
-    return config;
-});
-
-
-
-
-// ===============================
-// MonitorConfig
-// ===============================
-
-
-builder.Services.AddSingleton<MonitorConfig>(
-serviceProvider =>
-{
-    var configuration =
-        serviceProvider.GetRequiredService<IConfiguration>();
-
-
-    var config =
-        new MonitorConfig();
-
-
-    configuration
-        .GetSection("Monitor")
-        .Bind(config);
-
-
-    return config;
-});
-
-
-
-// ===============================
-// Notificações
-// ===============================
-
-builder.Services.AddSingleton<INotifier, LogNotifier>();
-
+builder.Services.AddSingleton<LogNotifier>();
+builder.Services.AddSingleton<EmailNotifier>();
+builder.Services.AddSingleton<INotifier, CompositeNotifier>();
 builder.Services.AddSingleton<NotificationBuilder>();
-
-
-
-
-// ===============================
-// Validade
-// ===============================
-
-builder.Services.AddSingleton<ValidityChecker>(
-serviceProvider =>
-{
-    var configuration =
-        serviceProvider.GetRequiredService<IConfiguration>();
-
-
-    var diasAviso =
-        configuration.GetValue<int>(
-            "Validade:DiasAviso"
-        );
-
-
-    return new ValidityChecker(
-        diasAviso
-    );
-});
-
-
-
-
-// ===============================
-// Monitor de arquivos
-// ===============================
-
-builder.Services.AddSingleton<DocumentMonitorService>(
-serviceProvider =>
-{
-    var configuration =
-        serviceProvider.GetRequiredService<IConfiguration>();
-
-
-    var pasta =
-        configuration["Monitor:Pasta"];
-
-
-
-    return new DocumentMonitorService(
-        pasta!,
-        serviceProvider.GetRequiredService<INotifier>(),
-        serviceProvider.GetRequiredService<DocumentScanner>(),
-        serviceProvider.GetRequiredService<ValidityChecker>(),
-        serviceProvider.GetRequiredService<NotificationBuilder>()
-    );
-});
-
-
-
-
-// ===============================
-// Verificação diária
-// ===============================
-
-builder.Services.AddSingleton<ExpirationService>(
-serviceProvider =>
-{
-    var configuration =
-        serviceProvider.GetRequiredService<IConfiguration>();
-
-
-    var pasta =
-        configuration["Monitor:Pasta"];
-
-
-
-    return new ExpirationService(
-        pasta!,
-        serviceProvider.GetRequiredService<DocumentScanner>(),
-        serviceProvider.GetRequiredService<ValidityChecker>(),
-        serviceProvider.GetRequiredService<NotificationBuilder>(),
-        serviceProvider.GetRequiredService<INotifier>()
-    );
-});
-
-
-
-
-// ===============================
-// Worker
-// ===============================
 
 builder.Services.AddHostedService<Worker>();
 
-
+// ===============================
+// Executa o Worker
+// ===============================
 
 var host =
     builder.Build();
-
 
 host.Run();
 
