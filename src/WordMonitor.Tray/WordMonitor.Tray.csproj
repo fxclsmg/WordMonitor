@@ -2,26 +2,27 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-
     <TargetFramework>net8.0-windows</TargetFramework>
-
     <Nullable>enable</Nullable>
-
     <UseWindowsForms>true</UseWindowsForms>
-
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-
     <SelfContained>true</SelfContained>
-
-    <PublishSingleFile>false</PublishSingleFile>
-
     <ImplicitUsings>enable</ImplicitUsings>
-
-    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <PublishSingleFile>false</PublishSingleFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Resources\*.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\*.ico" />
   </ItemGroup>
 
 </Project>

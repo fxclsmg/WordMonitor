@@ -10,5 +10,5 @@ public class EmailConfig
 
     public string Senha { get; set; } = "";
 
-    public string Destino { get; set; } = "";
+    public string Destinatario { get; set; } = "";
 }

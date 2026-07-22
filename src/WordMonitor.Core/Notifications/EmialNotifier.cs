@@ -36,7 +36,7 @@ public class EmailNotifier : INotifier
         email.To.Add(
             new MailboxAddress(
                 "Administrador",
-                config.Destino!
+                config.Destinatario!
             )
         );
 
