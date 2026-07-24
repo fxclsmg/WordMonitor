@@ -1,5 +1,6 @@
 using System;
 using System.Windows.Forms;
+using WordMonitor.Configurator.Forms;
 
 namespace WordMonitor.Configurator;
 
@@ -13,13 +14,14 @@ internal static class Program
         {
             ApplicationConfiguration.Initialize();
 
-            Application.Run(new MainForm());
+            //Application.Run(new MainForm());
+            Application.Run(new FormMain());
         }
         catch (Exception ex)
         {
             MessageBox.Show(
                 ex.ToString(),
-                "Erro:"
+                "Erro"
             );
         }
     }

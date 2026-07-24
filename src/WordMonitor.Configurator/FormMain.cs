@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 
 namespace WordMonitor.Configurator;
 
-public class MainForm : Form
+public class FormMain : Form
 {
     private TextBox txtPasta;
     private Button btnProcurar;
@@ -28,7 +28,7 @@ public class MainForm : Form
     private readonly ServiceManager _serviceManager;
     private JsonObject _config; 
 
-    public MainForm()
+    public FormMain()
     {
 
         var caminhoInstalado = Path.Combine(

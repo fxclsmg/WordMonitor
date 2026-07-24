@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Encodings.Web;
 using System.Text.Json.Nodes;
 
 namespace WordMonitor.Configurator.Services;
@@ -36,7 +37,8 @@ public class ConfigService
     {
         var opcoes = new JsonSerializerOptions
         {
-            WriteIndented = true
+            WriteIndented = true,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
 
         var json = configuracao.ToJsonString(opcoes);
